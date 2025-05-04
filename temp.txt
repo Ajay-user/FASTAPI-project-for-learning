@@ -52,7 +52,11 @@ curl -X DELETE 'localhost:8000/api/v1/books/delete_book/b03b7284-a7d1-4c01-be2e-
 
 
 
+ALEMBIC -- 
+template  :  alembic init -t async migrations
 
+Create a version : alembic revision --autogenerate -m "MESSAGE"
+upgrade: alembic uprade head
 
 
 

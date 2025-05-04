@@ -11,7 +11,7 @@ class UserService:
     async def get_user_by_email(self, email:str, session:AsyncSession)->UserModel:
         statement = select(UserModel).where(UserModel.email==email)
         result = await session.execute(statement=statement)
-        user = result.first()
+        user = result.scalar()
         print("EMAIL ", email)
         print("USER FOUND >>>> ", user)
         return user

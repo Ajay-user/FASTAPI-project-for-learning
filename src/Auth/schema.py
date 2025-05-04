@@ -24,3 +24,8 @@ class CreateUser(BaseModel):
     first_name:str
     last_name:str
     is_verified:bool = False
+
+
+class UserCred(BaseModel):
+    email:EmailStr
+    password:str
