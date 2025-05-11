@@ -35,7 +35,7 @@ async def login(user_cred:UserCred, session:AsyncSession=Depends(get_session)):
             user_data = {
                 'user' : {
                     'email': user_cred.email,
-                    'uid': str(user.uid)
+                    'uid': str(user.uid),
 
                 },
             }

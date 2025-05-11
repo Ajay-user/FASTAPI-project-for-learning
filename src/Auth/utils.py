@@ -1,6 +1,8 @@
 from passlib.context import CryptContext
 import jwt
-from datetime import timedelta
+from datetime import timedelta, datetime
+from fastapi.exceptions import HTTPException
+from fastapi import status
 
 from src.config import Config
 
@@ -16,15 +18,20 @@ def verify_password(password:str, hash:str)->bool:
 
 def create_jwt_token(user_data:dict, expire_delta:timedelta=timedelta(seconds=30))->str:
     try:
+        user_data['exp'] = (datetime.now() + expire_delta).timestamp()
         return  jwt.encode(payload=user_data, key=Config.JWT_SECRET, algorithm=Config.JWT_ALGO)
     except jwt.exceptions.PyJWTError as e:
-        raise Exception(f"JWT error : {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='jwt token creation error')
+    except Exception as e:
+        raise Exception(f"JWT error {e}")
 
 def verify_jwt_token(token:str):
     try:
         user_data = jwt.decode(jwt=token, key=Config.JWT_SECRET, algorithms=Config.JWT_ALGO)
         return user_data
     except jwt.exceptions.DecodeError as e:
-        raise Exception(f'JWT decode exeception: {e}')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='jwt decoding error')
     except jwt.exceptions.ExpiredSignatureError as e:
-        raise Exception(f'JWT token expired: {e}')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='jwt token expired')
+    except jwt.exceptions.InvalidTokenError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='jwt invalid token')

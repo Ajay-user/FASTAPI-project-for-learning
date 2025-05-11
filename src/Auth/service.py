@@ -12,8 +12,6 @@ class UserService:
         statement = select(UserModel).where(UserModel.email==email)
         result = await session.execute(statement=statement)
         user = result.scalar()
-        print("EMAIL ", email)
-        print("USER FOUND >>>> ", user)
         return user
 
     async def is_user(self, email:str, session:AsyncSession)->bool:
