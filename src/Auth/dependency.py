@@ -1,5 +1,9 @@
-from fastapi import Request
+from fastapi import Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.exceptions import HTTPException
+
+from db.redis import is_added_to_block_list
+from .utils import verify_jwt_token
 
 
 class TokenBearer(HTTPBearer):
@@ -8,22 +12,37 @@ class TokenBearer(HTTPBearer):
         super().__init__(auto_error=auto_error)
 
     async def __call__(self, request:Request):
-        auth_credentials = await super().__call__(request)  # scheme='Bearer' credentials='xxxxxxxxxxxxxxxxxxx'
-        scheme, credentials = auth_credentials
+        auth_credentials = await super().__call__(request)  # scheme='Bearer' credentials='xxxxxxACCESS/REFRESH-TOKENxxxxxxxx'
+        _, credentials = auth_credentials.scheme, auth_credentials.credentials
+        data = verify_jwt_token(token=credentials)
+        # check and the token -- refresh / access 
+        self.is_refresh_or_not(token_data=data)
 
+        if data:
+            if not await is_added_to_block_list(jid=data.get('jid')):
+                return data
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Token already issued, create a new token')
         
-        return auth_credentials
-
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='data not found')
+    
+    def is_refresh_or_not(self, token_data:dict):
+        raise NotImplementedError("this needs to be implemented in child class")
 
 
 
 class AccessTokenHandler(TokenBearer):
-    pass
+    
+    def is_refresh_or_not(self, token_data:dict):
+        if token_data and token_data['refresh']:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Need access token")
+        
 
 class RefreshTokenHandler(TokenBearer):
-    pass
-
-
+    
+    def is_refresh_or_not(self, token_data:dict):
+        if token_data and not token_data['refresh']:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Need refresh token")
+        
 
 
 
